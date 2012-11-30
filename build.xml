@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
     Copyright 2012 the original author or authors.
     
@@ -14,7 +14,20 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 -->
-<project name="ml-ant-http" default="dist" basedir=".">
+<project name="ml-ant-http" default="dist" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+
+  <!-- get Ivy -->
+  <property name="ivy.version" value="2.3.0-rc2" />
+  <target name="ivy:check-download">
+    <available file="${user.home}/.ivy2/jars/ivy-${ivy.version}.jar" property="ivy.jar.exist" />
+  </target>
+  <target name="ivy:download" depends="ivy:check-download" unless="ivy.jar.exist">
+    <mkdir dir="${user.home}/.ivy2/jars" />
+    <get src="http://repo2.maven.org/maven2/org/apache/ivy/ivy/${ivy.version}/ivy-${ivy.version}.jar" dest="${user.home}/.ivy2/jars/ivy-${ivy.version}.jar" usetimestamp="true" />
+  </target>
+  <target name="ivy:init" depends="ivy:download">
+    <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpath="${user.home}/.ivy2/jars/ivy-${ivy.version}.jar" />
+  </target>
 
   <property name="ml-ant-http.lib.dir" location="lib"/>
   <property name="ml-ant-http.src.dir" location="src"/>
@@ -54,8 +67,15 @@
     <mkdir dir="${ml-ant-http.dist.jar.dir}"/>
   </target>
 
-  <target name="compile" depends="init">
-    <javac debug="yes" destdir="${ml-ant-http.build.classes.dir}" classpathref="ml-ant-http.compile.classpath" includeantruntime="false">
+  <target name="ivy:resolve" depends="ivy:init">
+    <ivy:resolve file="ivy.xml" />
+    <ivy:cachepath pathid="compile.classpath" conf="compile" type="jar" />
+    <ivy:cachepath pathid="runtime.classpath" conf="runtime" type="jar" />
+    <ivy:cachepath pathid="test.classpath" conf="test" type="jar" />
+  </target>
+
+  <target name="compile" depends="init,ivy:resolve">
+    <javac debug="yes" destdir="${ml-ant-http.build.classes.dir}" classpathref="compile.classpath" includeantruntime="false">
       <src path="${ml-ant-http.java.src.dir}"/>
     </javac>
   </target>
